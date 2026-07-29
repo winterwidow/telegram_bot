@@ -1,0 +1,2 @@
+{"timestamp": "2026-07-29T13:07:14.330609", "type": "user_question", "content": "what is the capital of France"}
+{"timestamp": "2026-07-29T13:07:17.453841", "type": "agent_response", "content": "{\n  \"answer\": \"Paris\",\n  \"log_url\": \"http://api.logs.example.com/exec/12345\"\n}"}

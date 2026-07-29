@@ -1,0 +1,2 @@
+{"timestamp": "2024-01-15T10:30:45.123456", "type": "user_question", "content": "What is 2+2?"}
+{"timestamp": "2024-01-15T10:30:46.234567", "type": "agent_response", "content": "{\"answer\": \"4\", \"log_url\": \"https://example.com/logs/123.jsonl\"}"}
