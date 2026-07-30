@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 session_logs = {}
+run_log_lock = threading.Lock()
 
 telegram_token = os.getenv("TELEGRAM_BOT_TOKEN")
 aipipe_token = os.getenv("AIPIPE_TOKEN")
@@ -68,33 +69,30 @@ def handle_text_message(user_id: int, chat_id: int, question: str) -> None:
         if user_id not in session_logs:
             session_logs[user_id] = []
 
-        session_logs[user_id].append({
+        user_entry = {
             "timestamp": datetime.now().isoformat(),
+            "user_id": user_id,
             "type": "user_question",
             "content": question,
-        })
+        }
+        session_logs[user_id].append(user_entry)
+        append_run_log(user_entry)
 
         thinking_msg = send_telegram_message(chat_id, "Analyzing your question...")
         response = analyze_question(question, user_id)
 
-        session_logs[user_id].append({
+        response_entry = {
             "timestamp": datetime.now().isoformat(),
+            "user_id": user_id,
             "type": "agent_response",
             "content": response,
-        })
+        }
+        session_logs[user_id].append(response_entry)
+        append_run_log(response_entry)
 
         save_session_logs(user_id)
 
-        try:
-            response_json = json.loads(response)
-        except json.JSONDecodeError:
-            response_json = {
-                "answer": response,
-                "log_url": f"{log_server_url}/logs/{user_id}.jsonl",
-            }
-
-        if "log_url" not in response_json:
-            response_json["log_url"] = f"{log_server_url}/logs/{user_id}.jsonl"
+        response_json = build_final_reply(response)
 
         try:
             message_id = thinking_msg.get("result", {}).get("message_id")
@@ -112,14 +110,28 @@ def handle_text_message(user_id: int, chat_id: int, question: str) -> None:
             pass
 
 
+def build_final_reply(response: str) -> dict:
+    """Return the required two-key answer and public JSONL log URL."""
+    try:
+        parsed = json.loads(response)
+    except json.JSONDecodeError:
+        parsed = {"answer": response}
+
+    if isinstance(parsed, dict) and "answer" in parsed and len(parsed) <= 2:
+        answer = parsed["answer"]
+    else:
+        answer = parsed
+    return {"answer": answer, "log_url": f"{log_server_url}/run.jsonl"}
+
+
 def analyze_question(question: str, user_id: int) -> str:
     """Use aipipe to analyze the data question and return JSON response."""
-    system_prompt = """You are a data analyst AI assistant. Your job is to:
+    system_prompt = f"""You are a data analyst AI assistant. Your job is to:
 1. Receive a data analysis question
 2. Analyze the question and provide a solution
-3. Return ONLY a valid JSON object with exactly these keys:
-   - "answer": your solution (shaped exactly as the question asks for)
-   - "log_url": the URL to your execution logs
+3. Return ONLY a valid JSON object with exactly these two keys:
+   - "answer": the answer, shaped exactly as the user requests
+   - "log_url": "{log_server_url}/run.jsonl"
 
 The answer should be technically accurate and directly address the question.
 For classification/prediction tasks, provide the result in the format requested.
@@ -152,10 +164,7 @@ Return ONLY valid JSON. Do not include any markdown, code blocks, or extra text.
 
         if response.status_code != 200:
             logger.error("aipipe API error: %s - %s", response.status_code, response.text)
-            return json.dumps({
-                "answer": f"Error: API returned {response.status_code}",
-                "log_url": f"{log_server_url}/logs/{user_id}.jsonl",
-            })
+            return json.dumps({"error": f"API returned {response.status_code}"})
 
         response_data = response.json()
         response_text = (
@@ -168,10 +177,7 @@ Return ONLY valid JSON. Do not include any markdown, code blocks, or extra text.
 
         if not response_text:
             logger.error("Empty response from aipipe API")
-            return json.dumps({
-                "answer": "Error: Empty response from API",
-                "log_url": f"{log_server_url}/logs/{user_id}.jsonl",
-            })
+            return json.dumps({"error": "Empty response from API"})
 
         try:
             json.loads(response_text)
@@ -182,24 +188,15 @@ Return ONLY valid JSON. Do not include any markdown, code blocks, or extra text.
             if json_match:
                 response_text = json_match.group(0)
             else:
-                response_text = json.dumps({
-                    "answer": response_text,
-                    "log_url": f"{log_server_url}/logs/{user_id}.jsonl",
-                })
+                response_text = json.dumps({"answer": response_text})
 
         return response_text
     except requests.exceptions.Timeout:
         logger.error("aipipe API request timeout")
-        return json.dumps({
-            "answer": "Error: API request timeout",
-            "log_url": f"{log_server_url}/logs/{user_id}.jsonl",
-        })
+        return json.dumps({"error": "API request timeout"})
     except Exception as e:
         logger.error("Error calling aipipe API: %s", e)
-        return json.dumps({
-            "answer": f"Error processing question: {str(e)}",
-            "log_url": f"{log_server_url}/logs/{user_id}.jsonl",
-        })
+        return json.dumps({"error": f"Error processing question: {str(e)}"})
 
 
 def save_session_logs(user_id: int) -> str:
@@ -212,6 +209,13 @@ def save_session_logs(user_id: int) -> str:
             f.write(json.dumps(log_entry) + "\n")
 
     return log_file_path
+
+
+def append_run_log(entry: dict) -> None:
+    """Append one JSON object to the stable public run log."""
+    os.makedirs("logs", exist_ok=True)
+    with run_log_lock, open("logs/run.jsonl", "a", encoding="utf-8") as file:
+        file.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
 
 def process_telegram_update(data: dict) -> None:
@@ -287,6 +291,22 @@ def list_logs():
     os.makedirs("logs", exist_ok=True)
     log_files = os.listdir("logs")
     return jsonify({"logs": log_files}), 200
+
+
+@app.route("/run.jsonl", methods=["GET"])
+def get_run_log():
+    """Serve the aggregate JSONL run log as a public downloadable file."""
+    os.makedirs("logs", exist_ok=True)
+    path = "logs/run.jsonl"
+    if not os.path.exists(path):
+        open(path, "a", encoding="utf-8").close()
+    return send_file(path, mimetype="application/jsonl", as_attachment=False,
+                     download_name="run.jsonl")
+
+
+@app.route("/", methods=["GET"])
+def root():
+    return jsonify({"status": "ok", "health": f"{public_url}/health", "log_url": f"{log_server_url}/run.jsonl"}), 200
 
 
 def configure_telegram_webhook() -> None:
