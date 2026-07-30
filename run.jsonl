@@ -3,3 +3,5 @@
 {"timestamp": "2026-07-30T04:55:18.100510", "user_id": 8340483021, "type": "agent_response", "content": "{\"answer\":\"Karnataka is classified as a state in South India.\",\"log_url\":\"https://raw.githubusercontent.com/winterwidow/telegram_bot/main/run.jsonl\"}"}
 {"timestamp": "2026-07-30T06:26:32.774665", "user_id": 8340483021, "type": "user_question", "content": "Who wrote Harry Potter"}
 {"timestamp": "2026-07-30T06:26:35.466931", "user_id": 8340483021, "type": "agent_response", "content": "{\"answer\":\"J.K. Rowling\",\"log_url\":\"https://raw.githubusercontent.com/winterwidow/telegram_bot/main/run.jsonl\"}"}
+{"timestamp": "2026-07-30T06:36:28.740015", "user_id": 8340483021, "type": "user_question", "content": "Which state has the highest maternal mortality rate based on MOSPI data?"}
+{"timestamp": "2026-07-30T06:36:30.593210", "user_id": 8340483021, "type": "agent_response", "content": "{\"answer\":\"The state with the highest maternal mortality rate based on MOSPI data is Assam.\",\"log_url\":\"https://raw.githubusercontent.com/winterwidow/telegram_bot/main/run.jsonl\"}"}
