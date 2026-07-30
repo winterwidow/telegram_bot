@@ -5,3 +5,5 @@
 {"timestamp": "2026-07-30T06:26:35.466931", "user_id": 8340483021, "type": "agent_response", "content": "{\"answer\":\"J.K. Rowling\",\"log_url\":\"https://raw.githubusercontent.com/winterwidow/telegram_bot/main/run.jsonl\"}"}
 {"timestamp": "2026-07-30T06:36:28.740015", "user_id": 8340483021, "type": "user_question", "content": "Which state has the highest maternal mortality rate based on MOSPI data?"}
 {"timestamp": "2026-07-30T06:36:30.593210", "user_id": 8340483021, "type": "agent_response", "content": "{\"answer\":\"The state with the highest maternal mortality rate based on MOSPI data is Assam.\",\"log_url\":\"https://raw.githubusercontent.com/winterwidow/telegram_bot/main/run.jsonl\"}"}
+{"timestamp": "2026-07-30T08:29:42.615307", "user_id": 8340483021, "type": "user_question", "content": "Find the standard deviation of the following numbers : 5,9,8,12,6,10,6,8"}
+{"timestamp": "2026-07-30T08:29:44.807873", "user_id": 8340483021, "type": "agent_response", "content": "{\n  \"answer\": 2.209,\n  \"log_url\": \"https://raw.githubusercontent.com/winterwidow/telegram_bot/main/run.jsonl\"\n}"}
