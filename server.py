@@ -3,6 +3,7 @@ import logging
 import os
 import threading
 import time
+import base64
 from datetime import datetime
 
 import requests
@@ -21,6 +22,7 @@ app = Flask(__name__)
 
 session_logs = {}
 run_log_lock = threading.Lock()
+pending_run_entries = []
 
 telegram_token = os.getenv("TELEGRAM_BOT_TOKEN")
 aipipe_token = os.getenv("AIPIPE_TOKEN")
@@ -30,11 +32,16 @@ public_url = (
     or os.getenv("LOG_SERVER_URL")
     or "http://localhost:5000"
 ).rstrip("/")
-log_server_url = public_url
+log_url = os.getenv("LOG_URL", f"{public_url}/run.jsonl").rstrip("/")
 webhook_path = os.getenv("WEBHOOK_PATH", "/webhook")
 webhook_secret = os.getenv("TELEGRAM_WEBHOOK_SECRET", "")
 keepalive_enabled = os.getenv("KEEPALIVE_ENABLED", "true").lower() == "true"
 keepalive_interval = int(os.getenv("KEEPALIVE_INTERVAL_SECONDS", "600"))
+github_token = os.getenv("GITHUB_TOKEN")
+github_repo = os.getenv("GITHUB_REPO", "winterwidow/telegram_bot")
+github_branch = os.getenv("GITHUB_BRANCH", "main")
+github_log_path = os.getenv("GITHUB_LOG_PATH", "run.jsonl")
+github_contents_url = f"https://api.github.com/repos/{github_repo}/contents/{github_log_path}"
 
 AIPIPE_API_URL = "https://aipipe.org/openai/v1/chat/completions"
 
@@ -91,6 +98,7 @@ def handle_text_message(user_id: int, chat_id: int, question: str) -> None:
         append_run_log(response_entry)
 
         save_session_logs(user_id)
+        publish_run_log()
 
         response_json = build_final_reply(response)
 
@@ -121,7 +129,7 @@ def build_final_reply(response: str) -> dict:
         answer = parsed["answer"]
     else:
         answer = parsed
-    return {"answer": answer, "log_url": f"{log_server_url}/run.jsonl"}
+    return {"answer": answer, "log_url": log_url}
 
 
 def analyze_question(question: str, user_id: int) -> str:
@@ -131,7 +139,7 @@ def analyze_question(question: str, user_id: int) -> str:
 2. Analyze the question and provide a solution
 3. Return ONLY a valid JSON object with exactly these two keys:
    - "answer": the answer, shaped exactly as the user requests
-   - "log_url": "{log_server_url}/run.jsonl"
+   - "log_url": "{log_url}"
 
 The answer should be technically accurate and directly address the question.
 For classification/prediction tasks, provide the result in the format requested.
@@ -214,8 +222,63 @@ def save_session_logs(user_id: int) -> str:
 def append_run_log(entry: dict) -> None:
     """Append one JSON object to the stable public run log."""
     os.makedirs("logs", exist_ok=True)
-    with run_log_lock, open("logs/run.jsonl", "a", encoding="utf-8") as file:
+    with run_log_lock, open("run.jsonl", "a", encoding="utf-8") as file:
         file.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        pending_run_entries.append(entry)
+
+
+def publish_run_log() -> None:
+    """Append pending log entries to the public GitHub JSONL file."""
+    if not github_token:
+        return
+
+    with run_log_lock:
+        if not pending_run_entries:
+            return
+
+        try:
+            headers = {
+                "Accept": "application/vnd.github+json",
+                "Authorization": f"Bearer {github_token}",
+                "X-GitHub-Api-Version": "2022-11-28",
+            }
+            params = {"ref": github_branch}
+            existing = requests.get(
+                github_contents_url, headers=headers, params=params, timeout=20
+            )
+
+            sha = None
+            existing_text = ""
+            if existing.status_code == 200:
+                existing_data = existing.json()
+                sha = existing_data.get("sha")
+                existing_text = base64.b64decode(
+                    existing_data.get("content", "").replace("\n", "")
+                ).decode("utf-8")
+            elif existing.status_code != 404:
+                existing.raise_for_status()
+
+            new_lines = "".join(
+                json.dumps(entry, ensure_ascii=False) + "\n"
+                for entry in pending_run_entries
+            )
+            content = existing_text + new_lines
+            payload = {
+                "message": "Update bot run log",
+                "content": base64.b64encode(content.encode("utf-8")).decode("ascii"),
+                "branch": github_branch,
+            }
+            if sha:
+                payload["sha"] = sha
+
+            response = requests.put(
+                github_contents_url, headers=headers, json=payload, timeout=30
+            )
+            response.raise_for_status()
+            pending_run_entries.clear()
+            logger.info("Published %s log entries to GitHub", len(new_lines.splitlines()))
+        except Exception as e:
+            logger.warning("Could not publish run log to GitHub: %s", e)
 
 
 def process_telegram_update(data: dict) -> None:
@@ -297,7 +360,7 @@ def list_logs():
 def get_run_log():
     """Serve the aggregate JSONL run log as a public downloadable file."""
     os.makedirs("logs", exist_ok=True)
-    path = "logs/run.jsonl"
+    path = "run.jsonl"
     if not os.path.exists(path):
         open(path, "a", encoding="utf-8").close()
     return send_file(path, mimetype="application/jsonl", as_attachment=False,
@@ -306,7 +369,7 @@ def get_run_log():
 
 @app.route("/", methods=["GET"])
 def root():
-    return jsonify({"status": "ok", "health": f"{public_url}/health", "log_url": f"{log_server_url}/run.jsonl"}), 200
+    return jsonify({"status": "ok", "health": f"{public_url}/health", "log_url": log_url}), 200
 
 
 def configure_telegram_webhook() -> None:

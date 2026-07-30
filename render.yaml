@@ -13,6 +13,16 @@ services:
         sync: false
       - key: WEBHOOK_URL
         sync: false
+      - key: LOG_URL
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: GITHUB_REPO
+        value: winterwidow/telegram_bot
+      - key: GITHUB_BRANCH
+        value: main
+      - key: GITHUB_LOG_PATH
+        value: run.jsonl
       - key: TELEGRAM_WEBHOOK_SECRET
         generateValue: true
       - key: KEEPALIVE_ENABLED
