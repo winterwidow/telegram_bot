@@ -1,3 +1,5 @@
 {"type":"log_initialized","timestamp":"2026-07-30T00:00:00Z"}
 {"timestamp": "2026-07-30T04:55:16.084595", "user_id": 8340483021, "type": "user_question", "content": "classify karnataka as south india or north india"}
 {"timestamp": "2026-07-30T04:55:18.100510", "user_id": 8340483021, "type": "agent_response", "content": "{\"answer\":\"Karnataka is classified as a state in South India.\",\"log_url\":\"https://raw.githubusercontent.com/winterwidow/telegram_bot/main/run.jsonl\"}"}
+{"timestamp": "2026-07-30T06:26:32.774665", "user_id": 8340483021, "type": "user_question", "content": "Who wrote Harry Potter"}
+{"timestamp": "2026-07-30T06:26:35.466931", "user_id": 8340483021, "type": "agent_response", "content": "{\"answer\":\"J.K. Rowling\",\"log_url\":\"https://raw.githubusercontent.com/winterwidow/telegram_bot/main/run.jsonl\"}"}
