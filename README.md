@@ -46,15 +46,55 @@ data-analyst-bot/
 
 ## Testing
 
-### Manual Testing
-1. Send the bot a message
-2. Verify response is valid JSON
-3. Check if logs are accessible on GitHub
-
-### Automated Testing
+### 1 Clone/Setup the Project
 ```bash
-python test_bot.py
+# Create a new directory
+mkdir data-analyst-bot
+cd data-analyst-bot
+
+# Initialize git (for version control)
+git init
+
+# Copy all the provided files into this directory
+# - bot.py
+# - server.py
+# - requirements.txt
+# - .env.example
+# - Dockerfile
 ```
+
+### 2 Create Environment File
+```bash
+# Copy the example file
+cp .env.example .env
+
+# Edit .env with your credentials
+```
+
+Your `.env` should look like:
+```
+TELEGRAM_BOT_TOKEN=YOUR TOKEN
+OPENAI_API_KEY=YOUR API KEY
+LOG_SERVER_URL=http://localhost:5000
+PORT=5000
+```
+
+### 2.3 Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 2.4 Run the Bot Locally (Polling Mode)
+```bash
+python bot.py
+```
+
+The bot will now poll Telegram for messages. Test it by:
+1. Finding your bot on Telegram (search for its username)
+2. Send it a message like: "What is 2+2?"
+3. The bot should reply with a JSON object
+
+---
 
 Tests:
 - ✅ API connections 
