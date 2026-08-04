@@ -59,7 +59,7 @@ Each user log is JSONL, one JSON object per line. This is automatically updated 
 
 ## Testing
 
-The bot is called from Telegram: @n_data_bot
+The bot is called from Telegram: ``` @n_data_bot```
 
 
 ## License
