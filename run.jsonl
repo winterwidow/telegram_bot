@@ -27,3 +27,5 @@
 {"timestamp": "2026-08-11T07:31:16.000117", "user_id": 8340483021, "type": "agent_response", "content": "{\"answer\": {\"state\": \"Bihar\"}, \"log_url\": \"https://raw.githubusercontent.com/winterwidow/telegram_bot/main/run.jsonl\"}"}
 {"timestamp": "2026-08-11T07:31:36.484276", "user_id": 8340483021, "type": "user_question", "content": "Compute the population standard deviation of 2, 4, 4, 4, 5, 5, 7, 9, rounded to 4 decimal places."}
 {"timestamp": "2026-08-11T07:31:38.689791", "user_id": 8340483021, "type": "agent_response", "content": "{\n  \"answer\": 2.0,\n  \"log_url\": \"https://raw.githubusercontent.com/winterwidow/telegram_bot/main/run.jsonl\"\n}"}
+{"timestamp": "2026-08-11T09:07:46.758404", "user_id": 8340483021, "type": "user_question", "content": "List of all states in South INdia"}
+{"timestamp": "2026-08-11T09:07:49.810555", "user_id": 8340483021, "type": "agent_response", "content": "{\n  \"answer\": [\n    \"Andhra Pradesh\",\n    \"Karnataka\",\n    \"Kerala\",\n    \"Tamil Nadu\",\n    \"Telangana\"\n  ],\n  \"log_url\": \"https://raw.githubusercontent.com/winterwidow/telegram_bot/main/run.jsonl\"\n}"}
