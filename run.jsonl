@@ -43,3 +43,5 @@
 {"timestamp": "2026-08-13T09:35:23.621618", "user_id": 556522764, "type": "agent_response", "content": "{\"error\": \"API returned 401\"}"}
 {"timestamp": "2026-08-13T14:07:19.618178", "user_id": 8340483021, "type": "user_question", "content": "South India states"}
 {"timestamp": "2026-08-13T14:07:20.359012", "user_id": 8340483021, "type": "agent_response", "content": "{\"error\": \"API returned 401\"}"}
+{"timestamp": "2026-08-13T14:09:49.410754", "user_id": 8340483021, "type": "user_question", "content": "South india states"}
+{"timestamp": "2026-08-13T14:09:52.258943", "user_id": 8340483021, "type": "agent_response", "content": "{\n  \"answer\": [\n    \"Andhra Pradesh\",\n    \"Karnataka\",\n    \"Kerala\",\n    \"Tamil Nadu\",\n    \"Telangana\"\n  ],\n  \"log_url\": \"https://raw.githubusercontent.com/winterwidow/telegram_bot/main/run.jsonl\"\n}"}
